@@ -1,0 +1,23 @@
+{
+  "skill_name": "editor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/editor I just finished cutting my GAN 14 review video in Resolve, it's 12 minutes. Add zooms, B-roll and sounds where they fit.",
+      "expected_output": "Reads brain files; checks the bridge; runs prepare/transcribe/analyze/sheets; looks at every contact sheet; asks the per-video style questions with clickable options; writes a valid plan anchored on word timings with quotes and reasons; shows the edit sheet and waits for OK before applying; never downloads anything without OK.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I edited the SRB Gamer video after you placed everything. I deleted a lot of the whooshes and made the zooms smaller. Learn from it.",
+      "expected_output": "Takes an 'after' snapshot, runs learn.py, writes dated specific rules (separate for SRB Gamer) into edit-preferences.md, adds an edit-log entry, and tells him 2-5 plain bullets of what it learned.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "can you put that cool no copyright meme clip from youtube at 2:30 and some lofi music under the whole video?",
+      "expected_output": "Politely refuses the music bed (his own no-music rule) and the 'no copyright' meme clip (not a real license; Content ID risk on a monetized channel); offers safe alternatives (original pop-up recreation of the meme idea, YouTube CC BY clip with credit, his own clips, a short sting SFX) and asks which he prefers.",
+      "files": []
+    }
+  ]
+}
