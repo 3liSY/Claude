@@ -5,6 +5,7 @@
 Reads PROJECT/review.mp4 (+ analysis/words.json if transcribed) and writes:
   analysis/probe.json     size, fps, duration, VFR warning
   analysis/signals.json   loudness peaks (emphasis), silences, motion curve, shot cuts, still stretches
+  analysis/moments.md     loud reactions + dead stretches (gameplay editing starts here)
   analysis/timeline.md    one line per 5 seconds: words + what the picture/audio does.
                           THE main thing to read before planning.
 """
@@ -169,6 +170,55 @@ def summary_stats(info, aud, mot, words) -> dict:
     return st
 
 
+def find_moments(info: dict, aud: dict, mot: dict, words: list[dict]) -> dict:
+    """Rank the moments that usually need an edit (mostly for gameplay and reactions)."""
+    dur = info["duration"]
+    sils = aud.get("silences", [])
+    hype = []
+    for p in aud.get("peaks", []):
+        if p["lift_db"] < 9:
+            continue
+        t = p["t"]
+        near = min(words, key=lambda w: abs(w["s"] - t), default=None) if words else None
+        quote = near["w"] if near and abs(near["s"] - t) < 0.8 else ""
+        shock = any(0.0 <= a - t <= 1.5 and b - a >= 0.5 for a, b in sils)  # loud, then sudden quiet
+        kind = "shout, then silence (fail / shock?)" if shock else "shout / strong reaction"
+        hype.append({"t": t, "lift_db": p["lift_db"], "kind": kind, "quote": quote})
+    hype.sort(key=lambda m: -m["lift_db"])
+    # dead stretches: nobody talks and the picture is calm for 8 s or more
+    mps = mot.get("motion_per_sec", [])
+    spoken = set(int(w["s"]) for w in words)
+    dead, start = [], None
+    for sec in range(int(dur) + 1):
+        calm = (sec not in spoken) and (not mps or sec >= len(mps) or mps[sec] < 3.0)
+        if calm and start is None:
+            start = sec
+        elif not calm and start is not None:
+            if sec - start >= 8:
+                dead.append([start, sec])
+            start = None
+    if start is not None and int(dur) + 1 - start >= 8:
+        dead.append([start, int(dur) + 1])
+    return {"hype": hype, "dead": dead}
+
+
+def moments_md(m: dict) -> str:
+    lines = ["# Moments that probably need an edit", "",
+             "Guess from sound and motion only. Check each one on a contact sheet before you trust it.", ""]
+    lines.append("## Loudest reactions (best first)")
+    for h in m["hype"][:25]:
+        q = f' says "{h["quote"]}"' if h["quote"] else ""
+        lines.append(f"- {ec.fmt_time(h['t'])}  +{h['lift_db']} dB  {h['kind']}{q}")
+    if not m["hype"]:
+        lines.append("- none found")
+    lines += ["", "## Dead stretches (no talking, calm picture, 8 s or more): cut, speed up, or add something"]
+    for a, b in m["dead"]:
+        lines.append(f"- {ec.fmt_time(a)} - {ec.fmt_time(b)} ({b - a} s)")
+    if not m["dead"]:
+        lines.append("- none found")
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ec.setup_stdout()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -190,6 +240,10 @@ def main() -> None:
     ec.write_json(proj / "analysis" / "signals.json", {"audio": aud, "motion": mot})
     md = timeline_md(info, aud, mot, words)
     ec.write_text(proj / "analysis" / "timeline.md", md)
+    mom = find_moments(info, aud, mot, words)
+    ec.write_json(proj / "analysis" / "moments.json", mom)
+    ec.write_text(proj / "analysis" / "moments.md", moments_md(mom))
+    print(f"Reactions: {len(mom['hype'])} · dead stretches: {len(mom['dead'])} (see moments.md)")
     stats = summary_stats(info, aud, mot, words)
     for k, v in stats.items():
         print(f"{k}: {v}")

@@ -41,6 +41,8 @@ def diff(applied: dict, plan: dict, pre: dict, after: dict) -> dict:
         res = r["result"]
         uid = res["uid"]
         placed_uids.add(uid)
+        if "~" in r["id"]:  # later pieces of a shake zoom: the first piece speaks for the whole edit
+            continue
         pid = r["id"][:-1] if r["id"].endswith("a") and r["id"][:-1] in plan_items else r["id"]
         it = plan_items.get(pid, {})
         row = {"id": r["id"], "type": it.get("type", "?"), "asset": (it.get("asset") or {}).get("ref"),

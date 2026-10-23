@@ -151,7 +151,8 @@ Count his own cuts (`analyze.py` shot cuts) as visual changes. Don't add edits w
 - **Humor only where it is actually funny** (his rule): absurd lines he says, a cuber in-joke (pops, lockups, DNFs, +2, bad scramble), gaming fails.
   - Never repeat the same gag format back to back.
   - Default budget is 1 comic edit per 45–90 s.
-- Recreate meme formats as original pop-ups. Never use meme audio or clips (licensing rule).
+- Recreate meme formats as original pop-ups. Never use meme *clips* or meme audio taken from memes. Meme-*style* sounds are allowed only from his own files or CC0 / CC BY sources (see §11).
+- **Shake zoom** (`mode: "shake"`, scale 1.12–1.3, 0.3–1.0 s): the funny-hit zoom for fails and big reactions. Max 1 per 45–90 s. Pair it with a freeze or a hit sound, not with both plus a pop-up.
 
 ## 8. Transitions
 
@@ -173,12 +174,27 @@ OFFICIAL YouTube rules: the first chapter at 0:00, at least 3 chapters, each at 
 - **Cube reviews:** B-roll of the cube from his own clips (close-ups, turning, magnets), plus a `label` with the model name.
 - **Avoid** using "Rubik's" for non-Rubik's brand cubes in pop-ups ("puzzle cube" or the real brand); this is trademark-safe.
 
-## 11. Gaming videos (SRB Gamer)
+## 11. Gaming videos (SRB Gamer, his main channel)
 
-- Faster default pacing. Cut-worthy moments are kills, fails, clutches and funny deaths.
-- Use freeze + zoom + caption for fails and wins. Zoom centers often go to the HUD, the kill feed or the score.
-- **No B-roll over key gameplay.** Menus, loading screens and pauses over 0.5 s are prime spots for pop-ups, or a `note` to cut them.
+Facts he gave: many different games, no face cam, mostly Syrian Arabic voice with some English game words, edits of about 6–10 per minute, "kills, wins and clutches", "fails and funny deaths", "reactions and shouting". What needs the most editing varies per video.
+
+**Start from `analysis/moments.md`.** It ranks his loudest reactions and lists dead stretches. Look at each one on a contact sheet before you plan anything for it. Loudness alone cannot tell a kill from a fail.
+
+| Moment | Edit recipe (pick one or two, not all) |
+|---|---|
+| Kill, win, clutch | Hard zoom on the kill feed, score or crosshair, landing on the first frame of the event (not the word). Short pop-up ("CLUTCH", the number). One hit sound, quiet. Or a 0.5 s freeze. |
+| Fail, funny death | Freeze (0.5–1 s) plus a `shake` zoom, a meme-style hit sound, a short pop-up. Only if it is really funny. |
+| Reaction, shouting | Hard zoom or `shake` on the loudest word. No pop-up if his words already say it. |
+| Calm talking over gameplay | Slow push-in (`smooth`), or a pop-up for a number or term. |
+| Dead stretch (menus, loading, waiting) | A `note` ("cut or speed up 4x here") with the exact times. The bridge cannot change speed. |
+
+- **No face cam:** never plan a webcam reaction. Zoom centers go to the action, the HUD, the kill feed, the minimap or the score.
+- **No B-roll over key gameplay.** B-roll is for talking parts only.
+- **Never cover the HUD part that matters** (ammo, health, score, objective) with a pop-up. Use `position: top` or `lower` after looking at the sheet.
+- **Meme-style sound hits** (bruh, boom, record scratch): only sounds that are CC0 or CC BY on Freesound, or his own. Never rip a sound from a meme or a video. The sound must be a different recording that merely *sounds* similar. Max 1 per 60–90 s, never the same sound twice in a row, level at −12 dB under his voice.
 - In-game licensed music: add a `fix` note to mute it if it plays loudly (Content ID risk).
+- **Different game each time:** put the game name into `brain/terms.md` before transcribing, so Whisper spells it right. Ask him for the exact name if you are not sure.
+- **Syrian Rubik vs SRB Gamer:** read `references/channels.md` for the two profiles. Ask which channel the video belongs to if the project doesn't say.
 
 ## 12. What the research does and doesn't say
 

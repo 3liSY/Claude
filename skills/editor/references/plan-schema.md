@@ -44,14 +44,14 @@ One file per version in `projects/<p>/plan/`. It is the single source of truth: 
 | `quote` | nice | The words he says at that moment (Arabic as said) |
 | `label` | optional | Short ASCII for the marker name (default = the type). Example: "cube explode" |
 | `marker` | optional | Override: `true`/`false`. Default: every type except sfx and caption gets a marker |
-| `status` | optional | `"rejected"` = he said no (kept for learning, never applied) |
+| `status` | optional | `"rejected"` = he said no (kept for learning, never applied). `"unsure"` = you are not sure: nothing is placed, only a red marker, so he decides |
 | `confidence` | optional | 0–1, your own certainty; the sheet doesn't show it |
 | `asset` | broll/sfx | `{"ref": "<library id or path or candidate:src:id>", "in": 1.0, "audio": false}` |
 | `params` | per type | See below |
 
 ## 3. Type-by-type params
 
-**zoom**: `{"scale": 1.25, "center": [0.5, 0.6], "mode": "hard"|"smooth", "ease": 0.3, "out": false}`
+**zoom**: (`shake` = impact zoom for funny hits: hard punch-in that jitters and calms down over 0.3-1.5 s; scale 1.08+) `{"scale": 1.25, "center": [0.5, 0.6], "mode": "hard"|"smooth"|"shake", "ease": 0.3, "out": false}`
 - `scale` is 1.01–4.0 (1.25 = 125%).
 - `center` is the point to push toward, 0–1 from the top-left.
 - `hard`: a zoomed copy of his clip sits on `ED ZOOM` for `dur`, so it starts and ends with a cut.

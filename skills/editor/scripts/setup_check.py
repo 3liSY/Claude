@@ -26,7 +26,15 @@ Newest rule wins. Every learned line is dated. Mark replaced lines with ~~strike
 ## What he told us (2026-10-22)
 - Resolve **Free 21.0.4**: do NOT update to 21.1 (Free 21.1 removed Python scripting; the bridge needs it).
 - Timeline: 60 fps. The skill edits his finished cut (a Resolve timeline): it only ADDS layers on new tracks, never moves his cut.
-- Videos: Syrian Rubik long-form and SRB Gamer long-form. No Shorts for now.
+- Videos: **SRB Gamer is the main channel**, then Syrian Rubik. Long-form, length varies per video. No Shorts for now.
+- SRB Gamer: many different games, no face cam, mostly Syrian Arabic voice. What needs editing varies: kills/wins/clutches, fails/funny deaths, reactions/shouting.
+- Edit density: about 6-10 edits per minute (zooms + pop-ups + freezes + sounds together).
+- Zooms: depends per video; shake / impact zoom on funny hits is wanted.
+- SFX he wants: whoosh on cuts and zooms, pops/clicks on text, meme-style hits (bruh, vine boom style) from licensed/own sources only.
+- Text pop-ups: big, bold, simple, soft shadow.
+- He hates: too many effects at once, covering hands/cube/action, loud SFX over his voice, the same effect repeated.
+- Unsure edits: mark them (`unsure`) and ask; do not place guesses silently.
+- Plan review: web sheet AND a short list in chat.
 - Footage: hands + cubes (phone/camera), gameplay/screen (OBS). Animations rarely. Never his face.
 - **No background music, ever.** Short dings/stings/SFX are fine.
 - Pacing, zoom style, transitions, captions, text pop-ups: **decide per video** (propose options each time).

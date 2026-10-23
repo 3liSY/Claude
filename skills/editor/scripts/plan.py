@@ -168,8 +168,13 @@ def validate(plan: dict, proj: Path, strict: bool = False) -> tuple[list[str], l
             c = p.get("center", [0.5, 0.5])
             if not (isinstance(c, list) and len(c) == 2 and all(0 <= v <= 1 for v in c)):
                 errors.append(f"{where}: center must be [x, y] between 0 and 1")
-            if p.get("mode", "hard") not in ("hard", "smooth"):
-                errors.append(f"{where}: zoom mode must be hard or smooth")
+            if p.get("mode", "hard") not in ("hard", "smooth", "shake"):
+                errors.append(f"{where}: zoom mode must be hard, smooth or shake")
+            elif p.get("mode") == "shake":
+                if isinstance(s, (int, float)) and s < 1.08:
+                    errors.append(f"{where}: a shake zoom needs scale 1.08 or more (the shake needs spare picture at the edges)")
+                if float(it.get("dur") or 0) > 1.5:
+                    warns.append(f"{where}: shake works best under 1.5 s")
         if t in ("broll", "sfx"):
             ref = (it.get("asset") or {}).get("ref")
             if not ref:
@@ -238,6 +243,23 @@ def validate(plan: dict, proj: Path, strict: bool = False) -> tuple[list[str], l
     visual = [it for it in items if it.get("type") in ("zoom", "broll", "popup", "freeze")]
     if dur and not any(it["at"] < 10 for it in visual):
         warns.append("nothing visual happens in the first 10 s (the hook)")
+    counted = [it for it in items if it.get("type") in ("zoom", "broll", "popup", "freeze", "sfx")
+               and it.get("status") != "unsure"]
+    if dur >= 60:
+        per_min = len(counted) / (dur / 60)
+        pacing = str(plan.get("style", {}).get("pacing", "medium")).lower()
+        lo, hi = {"calm": (2, 5), "fast": (10, 20)}.get(pacing, (6, 10))
+        if per_min < lo * 0.8:
+            warns.append(f"only {per_min:.1f} edits per minute; {pacing} pacing aims for {lo}-{hi}")
+        elif per_min > hi * 1.2:
+            warns.append(f"{per_min:.1f} edits per minute is a lot; {pacing} pacing aims for {lo}-{hi}")
+        for m in range(int(dur // 60) + 1):
+            n = sum(1 for it in counted if m * 60 <= it["at"] < (m + 1) * 60)
+            if n > hi * 1.6:
+                warns.append(f"minute {m}: {n} edits at once is too busy, thin it out")
+    for it in items:
+        if it.get("type") == "sfx" and float(it.get("params", {}).get("gain_db", 0)) > 0:
+            warns.append(f"{it['id']}: sound boosted above its level; it may cover his voice")
     chapters = sorted((it for it in items if it.get("type") == "chapter"), key=lambda x: x["at"])
     if chapters:
         if chapters[0]["at"] > 0.01:
@@ -371,7 +393,7 @@ def cmd_sheet(args) -> None:
                 asset_html += f"<div><b>By hand:</b> {html.escape(reason or '')}</div>"
         if it.get("id") in previews:
             asset_html += f"<div class='asset'><img class='card' src='{previews[it['id']].relative_to(proj / 'out').as_posix()}' alt=''></div>"
-        cls = "rej" if it.get("status") == "rejected" else ("manual" if hand else "")
+        cls = "rej" if it.get("status") == "rejected" else ("manual" if hand or it.get("status") == "unsure" else "")
         quote = f"<div class='ar'><bdi>“{html.escape(it['quote'])}”</bdi></div>" if it.get("quote") else ""
         rows.append(
             f"<tr class='{cls}'><td><input type='checkbox' aria-label='done {it.get('id')}'></td>"
@@ -588,6 +610,32 @@ def copy_props(base_props: dict) -> dict:
     return {k: base_props[k] for k in keep if base_props.get(k) not in (None, "")}
 
 
+def shake_ops(op: dict, hard: dict, f0: int, f1: int, fps: float, w: int, h: int) -> list[dict]:
+    """Impact zoom: the hard punch-in cut into 2-frame pieces that jump a few pixels, fading out.
+    Each piece is its own clip on the zoom track, so the whole thing is plain clips (no keyframes)."""
+    step = 2
+    n = max(1, (f1 - f0) // step)
+    spare_x = (float(hard["ZoomX"]) - 1) * w / 2 * 0.6  # never show the picture edge
+    spare_y = (float(hard["ZoomY"]) - 1) * h / 2 * 0.6
+    amp_x, amp_y = min(0.02 * w, spare_x), min(0.02 * h, spare_y)
+    cfps = op["src_len"] / max(1, f1 - f0)
+    out = []
+    for i in range(n):
+        fade = 1.0 - i / n
+        sign = 1 if i % 2 == 0 else -1
+        seg_len = step if i < n - 1 else (f1 - f0) - step * i
+        props = dict(hard)
+        props["Pan"] = round(float(hard["Pan"]) + sign * amp_x * fade, 2)
+        props["Tilt"] = round(float(hard["Tilt"]) - sign * amp_y * fade * 0.7, 2)
+        seg = dict(op)
+        seg.update({"id": op["id"] if i == 0 else f"{op['id']}~{i}",
+                    "at": op["at"] + step * i / fps,
+                    "src_start": op["src_start"] + int(round(step * i * cfps)),
+                    "src_len": max(1, int(round(seg_len * cfps))), "props": props})
+        out.append(seg)
+    return out
+
+
 def broll_fill_props(asset: dict, w: int, h: int, extra: float = 1.0) -> dict:
     aw, ah = asset.get("width") or w, asset.get("height") or h
     fit = min(w / aw, h / ah)
@@ -621,6 +669,9 @@ def build_ops(plan: dict, proj: Path, snap: dict, backup: bool = True) -> tuple[
     for it in items:
         t, iid, p = it["type"], it["id"], it.get("params", {})
         color = "Orange"
+        if it.get("status") == "unsure":
+            manual.append({**it, "manual_reason": "I was not sure about this one: you decide"})
+            continue
         if t in ("zoom", "freeze"):
             f0, f1 = frames(it["at"]), frames(item_end(it))
             base, _tr, why_not = find_base(snap, f0, f1)
@@ -649,6 +700,9 @@ def build_ops(plan: dict, proj: Path, snap: dict, backup: bool = True) -> tuple[
                 op = {"op": "place_segment", "id": iid, "track": TRACK[t], "base_uid": base["uid"],
                       "base_start": base["start"], "at": it["at"], "src_start": src0,
                       "src_len": max(1, int(round((f1 - f0) * cfps / fps))), "color": color}
+                if p.get("mode", "hard") == "shake":
+                    ops.extend(shake_ops(op, hard, f0, f1, fps, w, h))
+                    continue
                 if p.get("mode", "hard") == "smooth":
                     op["props"] = copy_props(bprops)
                     op["fusion_zoom"] = {"scale": s, "cx": cx, "cy": cy, "out": bool(p.get("out", False)),
@@ -742,7 +796,7 @@ def main() -> None:
             s.add_argument(k, **v)
         s.set_defaults(fn=fn)
 
-    add("init", cmd_init, **{"--channel": {"default": "syrian-rubik"}, "--force": {"action": "store_true"}})
+    add("init", cmd_init, **{"--channel": {"default": "srb-gamer"}, "--force": {"action": "store_true"}})
     add("bump", cmd_bump, **{"--note": {}})
     add("validate", cmd_validate, **{"--strict": {"action": "store_true"}})
     add("sheet", cmd_sheet, **{"--no-previews": {"action": "store_true"}})

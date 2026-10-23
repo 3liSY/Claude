@@ -158,6 +158,10 @@ def main():
         {"id": "Z02", "type": "zoom", "at": 20.0, "dur": 3.0, "params": {"scale": 1.2, "mode": "smooth", "out": True},
          "why": "slow push"},
         {"id": "C03", "type": "chapter", "at": 20.0, "params": {"title": "End"}, "why": "section"},
+        {"id": "Z04", "type": "zoom", "at": 4.0, "dur": 0.5, "params": {"scale": 1.2, "mode": "shake"},
+         "why": "funny fail hit"},
+        {"id": "Z05", "type": "zoom", "at": 14.0, "dur": 1.0, "status": "unsure", "params": {"scale": 1.2},
+         "why": "not sure this is funny"},
         {"id": "Z03", "type": "zoom", "at": 25.5, "dur": 1.0, "params": {"scale": 1.3}, "why": "title on top -> manual"},
     ]
     pp.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -170,7 +174,8 @@ def main():
     assert "01:00:02:00 01:00:02:01" in edl and "|C:ResolveColorYellow |M:Z01" in edl, edl[:400]
 
     out = sh("bridge_send.py", "apply", "2026-10-22_demo")
-    assert "BY HAND Z03" in out and "BY HAND X01" in out, out
+    assert "BY HAND Z03" in out and "BY HAND X01" in out and "BY HAND Z05" in out, out
+    assert "Z05" not in {r["id"] for r in json.loads((P / "bridge" / "applied_v1.json").read_text(encoding="utf-8"))["results"] if r["op"] != "marker"}
     rec = json.loads((P / "bridge" / "applied_v1.json").read_text(encoding="utf-8"))
     res = {r["id"]: r for r in rec["results"] if r["op"] != "marker"}
     bad = [r for r in rec["results"] if not r["ok"]]
@@ -184,6 +189,11 @@ def main():
     assert z2.src_start == 120 and z2.comps, "smooth zoom = Fusion comp on the copy of clip 2"
     sizes = z2.comps[0].tools["Transform2"].keys["Size"]
     assert sizes[0] == 1.0 and max(sizes.values()) == 1.2, sizes
+    shake = [r for i, r in res.items() if i == "Z04" or i.startswith("Z04~")]
+    assert len(shake) == 15, len(shake)
+    pans = [next(it for t in tl.tracks["video"] for it in t["items"] if it.uid == r["result"]["uid"]).props["Pan"]
+            for r in shake]
+    assert pans[0] * pans[1] < 0 and abs(pans[-1]) < abs(pans[0]) + 1, pans  # alternates, calms down
     b1 = next(it for t in tl.tracks["video"] for it in t["items"] if it.uid == res["B01"]["result"]["uid"])
     assert b1.src_start == 30 and b1.dur == 75 and abs(b1.props["ZoomX"] - 1.0) < 1e-6, (b1.src_start, b1.dur, b1.props)
     s1 = next(it for t in tl.tracks["audio"] for it in t["items"] if it.uid == res["S01"]["result"]["uid"])

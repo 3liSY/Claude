@@ -17,7 +17,7 @@ He records and cuts the video himself. This skill does the rest of the editing: 
    - **Never use:**
      - NonCommercial (NC) or NoDerivatives (ND) material.
      - Background music: **he never wants music**.
-     - Memes, movie or TV clips, or songs.
+     - Meme clips, movie or TV clips, or songs. Meme-*style* sound hits are fine only from his own files or CC0 / CC BY recordings.
      - A video just because its title says "no copyright".
    - Every outside file gets registered with its license (`stock.py download` or `library.py register`).
 5. **His cut is sacred.** Only add on tracks named `ED ...`. Never move, trim or delete his clips. The first apply on a timeline makes a backup copy of it.
@@ -47,7 +47,8 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
 1. If `EDITOR_HOME` doesn't exist, run **first-time setup**: `references/setup.md`.
 2. Read `brain/setup.md`, `brain/edit-preferences.md`, the last 3 entries of `brain/edit-log.md`, and `brain/terms.md`.
 3. **Reminders:** if a video in the log shows `uploaded: yes` and `retention: pending`, ask him in one line for the retention graph.
-4. Check the bridge with `bridge_send.py status`. If it isn't running, tell him: "In Resolve: Workspace > Scripts > Editor Bridge".
+4. Ask which channel this video is for (SRB Gamer is his main one, then Syrian Rubik) unless the project already says. Read `references/channels.md`.
+5. Check the bridge with `bridge_send.py status`. If it isn't running, tell him: "In Resolve: Workspace > Scripts > Editor Bridge".
 
 ## The pipeline for one video
 
@@ -58,7 +59,7 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
 
 **Step 2: Analyze.**
 - `transcribe.py`: word timings (faster-whisper large-v3 on his RTX 4060, about 3–4 min for 15 min of video).
-- `analyze.py`: loudness peaks, silences, motion, shot cuts, still stretches. Writes `analysis/timeline.md`.
+- `analyze.py`: loudness peaks, silences, motion, shot cuts, still stretches. Writes `analysis/timeline.md` and `analysis/moments.md` (loud reactions and dead stretches; read it first for gameplay).
 - `sheets.py`: contact sheets. **Look at all of them.**
 - `library.py index` if his folders changed.
 - Fix English terms the transcript mangled: add them to `brain/terms.md`, then run `transcribe.py --refix`.
@@ -84,6 +85,8 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
 - Run `plan.py init`, then write the items into `plan/edit_plan_v1.json`, following `references/editing-rules.md` and his preferences. Fields are in `references/plan-schema.md`.
 - Run `plan.py validate` until it shows no errors, and take its warnings seriously.
 - Run `plan.py sheet`, then open `out\edit_sheet.html` for him (`Start-Process`).
+
+**Also give him a short list in chat** (his choice: both sheet and list): total edits, edits per minute, the 5 boldest ones with times, and anything marked unsure.
 
 **Checkpoint B: he reviews the sheet.** He can approve everything, reject some IDs, or change things.
 - Small changes: set `"status": "rejected"` or edit the items in place.
@@ -132,7 +135,9 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
   - Don't put a whoosh on every cut.
   - The 2024 viewer backlash against non-stop "retention editing" is real.
 - **Cubing:** never cover his hands mid-algorithm with B-roll; use a corner pop-up such as "R U R' U'" instead. Big-number pop-ups suit times and records.
-- **Gaming:** no B-roll over key gameplay. Zooms, freezes and text work better there. Mute or avoid licensed in-game songs.
+- **Gaming (his main channel):** recipes are in `references/editing-rules.md` §11. No B-roll over key gameplay, no face cam, never cover the HUD. Mute or avoid licensed in-game songs.
+- **Unsure?** Set `"status": "unsure"` (red marker, nothing placed) or ask him. Never place a silent guess.
+- **What he hates:** too many effects at once, covering the action, loud SFX over his voice, the same effect repeated.
 - **Humor:** only where it is actually funny (fails, pops, lockups, absurd lines), and never the same gag twice in a row.
 - **The bridge can't do it, so put it in the plan as an item he does by hand (red marker):**
   - transitions (Resolve 21.0.4 has no transition API)
@@ -148,7 +153,7 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
 
 | Type | What the bridge does |
 |---|---|
-| `zoom` | puts a zoomed copy of his clip on `ED ZOOM` (`hard`) or a Fusion push-in (`smooth`) |
+| `zoom` | puts a zoomed copy of his clip on `ED ZOOM` (`hard`), a Fusion push-in (`smooth`), or a punch-in that shakes and calms down (`shake`, for funny hits) |
 | `broll` | places the clip on `ED B-ROLL`, scaled to fill |
 | `sfx` | puts a level-matched copy on `ED SFX 1`/`ED SFX 2`, with the loudest point on the moment |
 | `popup` | renders a text card and places it on `ED TEXT` |
@@ -179,4 +184,6 @@ Run scripts with `python "${CLAUDE_SKILL_DIR}/scripts/<name>.py" ...` in PowerSh
 - `references/resolve-bridge.md`: how the bridge works, its limits on 21.0.4, troubleshooting, optional community tools.
 - `references/sourcing.md`: where clips and sounds come from, licenses, API keys, YouTube CC, credits.
 - `references/learning.md`: the learning loop, preference format, edit log, retention review.
+- `references/channels.md`: SRB Gamer and Syrian Rubik profiles and his dislikes.
+- `references/first-run.md`: the step-by-step first test on his PC.
 - `references/arabic-and-captions.md`: transcription caveats, `terms.md`, SRT and burned-in caption rules.
